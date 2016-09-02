@@ -1,0 +1,60 @@
+{
+    "name": "gismo/gismo",
+    "type": "library",
+    "description": "Gismo All in one",
+    "keywords": ["Gismo", "framework"],
+    "homepage": "https://getgismo.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Matthias Leuffen",
+            "email": "matthes@leuffen.de"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "symfony/expression-language": "^3.1",
+        "symfony/yaml": "^3.1",
+        "firephp/firephp-core": "*",
+        "doctrine/annotations": "*",
+        "html5/htmlreader": "*",
+        "html5/template": "*",
+        "html5/fhtml": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gismo\\Component\\Application\\": "src/application/src/Application",
+            "Gismo\\Test\\Component\\Application\\": "test",
+
+            "Gismo\\Component\\Di\\": "src/di/src/Di",
+            "Gismo\\Component\\HttpFoundation\\": "src/http-foundation/src/HttpFoundation",
+
+            "Gismo\\Component\\Partial\\": "src/partial/src/Partial",
+
+            "Gismo\\Component\\PhpFoundation\\": "src/php-foundation/src/PhpFoundation",
+
+            "Gismo\\Component\\Plugin\\": "src/plugin/src/Plugin",
+            "Gismo\\Component\\DevTools\\": "src/dev-tools/src/DevTools",
+            "Gismo\\Component\\Route\\": "src/route/src/Route",
+            "Gismo\\Component\\Logging\\": "src/logging/src/Logging",
+            "Html5\\Template\\": "src/template/src/Template",
+            "Gismo\\Component\\Api\\": "src/api/src/Api",
+            "Gismo\\Component\\Config\\": "src/config/src/Config",
+            "Gismo\\Component\\ApplicationDevTools\\": "src/applicationDevTools/src/ApplicationDevTools",
+
+            "Gismo\\Component\\Annotation\\": "src/annotation/src/Annotation"
+        },
+        "files": [
+            "src/php-foundation/src/functions.inc.php"
+        ],
+        "exclude-from-classmap": [
+            "/test/"
+        ]
+    },
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.1-dev"
+        }
+    }
+}
