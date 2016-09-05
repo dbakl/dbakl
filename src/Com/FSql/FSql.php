@@ -34,14 +34,12 @@
         private $mType;
 
         /**
-         * @var Connection
+         * @var DbFSqlFackend
          */
-        private $mCon;
-        private $mPm;
+        private $mBackend;
 
-        public function __construct (Connection $con, PersistenceManager $pm = NULL) {
-            $this->mCon = $con;
-            $this->mPm = $pm;
+        public function __construct (DbFSqlFackend $backend) {
+            $this->mBackend = $backend;
         }
 
 
@@ -55,12 +53,10 @@
          * @return $this
          * @throws InvalidPropertyNameException
          */
-        public function update ($tableOrClassName, $id=NULL) {
+        public function update ($tableOrClassName) {
             if ($this->mType === NULL)
                 $this->mType = self::T_UPDATE;
-            $this->mTable = $this->getTableName($tableOrClassName);
-            if ($id !== NULL)
-                $this->where("id=?", $id);
+            $this->mTable = $this->mBackend->getTableName($tableOrClassName);
             return $this;
         }
 
@@ -71,12 +67,10 @@
          * @return $this
          * @throws InvalidPropertyNameException
          */
-        public function delete ($tableOrClassName, $id=NULL) {
+        public function delete ($tableOrClassName) {
             if ($this->mType === NULL)
                 $this->mType = self::T_DELETE;
-            $this->mTable = $this->getTableName($tableOrClassName);
-            if ($id !== NULL)
-                $this->where("id=?", $id);
+            $this->mTable = $this->mBackend->getTableName($tableOrClassName);
             return $this;
         }
 
@@ -88,7 +82,7 @@
         public function insert ($tableOrClassName) {
             if ($this->mType === NULL)
                 $this->mType = self::T_INSERT;
-            $this->mTable = $this->getTableName($tableOrClassName);
+            $this->mTable = $this->mBackend->getTableName($tableOrClassName);
             return $this;
         }
 
@@ -111,13 +105,10 @@
          *
          * @return $this
          */
-        public function from ($tableOrClassName, $id=NULL) {
-
+        public function from (string $tableOrClassName) {
             if ($this->mType === NULL)
                 $this->mType = self::T_SELECT;
-            $this->mTable = $this->getTableName($tableOrClassName);
-            if ($id !== NULL)
-                $this->where("id=?", $id);
+            $this->mTable = $this->mBackend->getTableName($tableOrClassName);
             return $this;
         }
 
@@ -132,14 +123,14 @@
          *
          * @return $this
          */
-        public function select ($col1, $col2=NULL) {
+        public function select (string ...$cols) {
             if ($this->mType === NULL)
                 $this->mType = self::T_SELECT;
-            if ($col1 === NULL) {
+            if (isset ($cols[0]) && $cols[0] === NULL) {
                 $this->mSelects = [];
                 return $this;
             }
-            foreach (func_get_args() as $arg)
+            foreach ($cols as $arg)
                 $this->mSelects[] = $arg;
             return $this;
         }
@@ -147,42 +138,41 @@
 
         public $mJoins = [];
 
-
-
-        public function getTableName ($tableOrClassName) {
-            try {
-                $def = Kernel::GetClassDefinition($tableOrClassName);
-                $tableName = $def->tableName;
-            } catch ( NoDataException $e) {
-                $tableName = $tableOrClassName;
-            }
-            return $tableName;
+        /**
+         * @param string $type
+         * @param string $tableOrClassName
+         * @param string|null $as
+         * @param string|null $on
+         * @param string|null $push
+         * @return $this
+         */
+        public function join(string $joinType="LEFT", string $tableOrClassName, string $as=null, string $on=null, string $push=null) {
+            $this->mJoins[] = [$joinType, $tableOrClassName, $as, $on, $push];
+            return $this;
         }
 
 
-
-
+        /**
+         *
+         * <example>
+         * ->leftJoin(SomeClass::class, "b", "a.ofClass = b.id", "b.bClasses[]");
+         * </example>
+         *
+         * @param $table
+         * @param null $on
+         * @return $this
+         */
+        public function leftJoin (string $tableOrClassName, string $as, string $on=NULL, string $push=NULL) {
+            return $this->join("LEFT", $tableOrClassName, $as, $on, $push);
+        }
 
         /**
          * @param $table
          * @param null $on
          * @return $this
          */
-        public function leftJoin ($tableOrClassName, $on=NULL) {
-            $tableName = $this->getTableName($tableOrClassName);
-            $this->mJoins[] = "LEFT JOIN {$tableName} ON $on";
-            return $this;
-        }
-
-        /**
-         * @param $table
-         * @param null $on
-         * @return $this
-         */
-        public function innerJoin ($tableOrClassName, $on=NULL) {
-            $tableName = $this->getTableName($tableOrClassName);
-            $this->mJoins[] = "INNER JOIN {$tableName} ON $on";
-            return $this;
+        public function innerJoin (string $tableOrClassName, string $as, string $on=NULL, string $push=NULL) {
+            return $this->join("LEFT", $tableOrClassName, $as, $on, $push);
         }
 
 
@@ -226,7 +216,7 @@
          *
          * @return $this
          */
-        public function limit ($limit) {
+        public function limit (int $limit) {
             if ($limit !== NULL)
                 $this->mLimit = (int)$limit;
             return $this;
@@ -239,7 +229,7 @@
          *
          * @return $this
          */
-        public function offset ($offset) {
+        public function offset (int $offset) {
             if ($offset !== NULL)
                 $this->mOffset = (int)$offset;
             return $this;
@@ -253,7 +243,7 @@
          * @return $this
          * @throws DbError
          */
-        public function orderBy ($clause, $desc=FALSE) {
+        public function orderBy (string $clause, bool $desc=FALSE) {
             if ($clause === NULL) {
                 $this->mOrderBy = [];
                 return $this;
